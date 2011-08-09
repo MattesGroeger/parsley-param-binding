@@ -1,0 +1,346 @@
+Index: parsley-flash/org/spicefactory/parsley/flash/resources/ResourceBundle.as
+===================================================================
+--- parsley-flash/org/spicefactory/parsley/flash/resources/ResourceBundle.as	(revision 1583)
++++ parsley-flash/org/spicefactory/parsley/flash/resources/ResourceBundle.as	(working copy)
+@@ -15,6 +15,7 @@
+  */
+  
+ package org.spicefactory.parsley.flash.resources {
++	import org.spicefactory.parsley.flash.resources.params.Params;
+ 	import org.spicefactory.parsley.flash.resources.Locale;
+ 	
+ /**
+@@ -38,6 +39,10 @@
+ 
+ 	function set cacheable (cacheable:Boolean) : void;
+ 	
++	function get params () : Params;
++	
++	function set params (params:Params) : void;
++	
+ 	/**
+ 	 * Adds messages for the specified <code>Locale</code>.
+ 	 * 
+@@ -53,7 +58,7 @@
+ 	 * @param params optional parameters for parameterized messages
+ 	 * @return the localized message for the specified key with all parameters applied
+ 	 */
+-	function getMessage (messageKey:String, params:Array) : String;	
++	function getMessage (messageKey:String, params:Object = null) : String;	
+ 	
+ }
+ 	
+Index: parsley-flash/org/spicefactory/parsley/flash/resources/tag/ResourceManagerTag.as
+===================================================================
+--- parsley-flash/org/spicefactory/parsley/flash/resources/tag/ResourceManagerTag.as	(revision 1583)
++++ parsley-flash/org/spicefactory/parsley/flash/resources/tag/ResourceManagerTag.as	(working copy)
+@@ -20,6 +20,7 @@
+ import org.spicefactory.parsley.flash.resources.Locale;
+ import org.spicefactory.parsley.flash.resources.adapter.FlashResourceBindingAdapter;
+ import org.spicefactory.parsley.flash.resources.impl.DefaultResourceManager;
++import org.spicefactory.parsley.flash.resources.params.DefaultParams;
+ import org.spicefactory.parsley.flash.resources.spi.ResourceManagerSpi;
+ 
+ import flash.utils.getQualifiedClassName;
+@@ -79,6 +80,7 @@
+ 		
+ 		manager.cacheable = cacheable;
+ 		manager.persistent = persistent;
++		manager.params = new DefaultParams();
+ 		
+ 		var first:Boolean = true;
+ 		for each (var locTag:LocaleTag in locales) {
+Index: parsley-flash/org/spicefactory/parsley/flash/resources/impl/DefaultResourceBundle.as
+===================================================================
+--- parsley-flash/org/spicefactory/parsley/flash/resources/impl/DefaultResourceBundle.as	(revision 1583)
++++ parsley-flash/org/spicefactory/parsley/flash/resources/impl/DefaultResourceBundle.as	(working copy)
+@@ -15,7 +15,8 @@
+  */
+  
+ package org.spicefactory.parsley.flash.resources.impl {
+-	import org.spicefactory.parsley.flash.resources.impl.LocaleUtil;
++import org.spicefactory.parsley.flash.resources.params.Params;
++import org.spicefactory.parsley.flash.resources.impl.LocaleUtil;
+ import org.spicefactory.lib.task.TaskGroup;	
+ import org.spicefactory.parsley.flash.resources.spi.ResourceBundleSpi;
+ import org.spicefactory.parsley.flash.resources.spi.BundleLoaderFactory;
+@@ -40,6 +41,7 @@
+ 	
+ 	private var _messages:Object;
+ 	private var _newMessages:Object;
++	private var _params:Params;
+ 	
+ 	/**
+ 	 * @inheritDoc
+@@ -81,6 +83,14 @@
+ 	public function get cacheable () : Boolean {
+ 		return _cacheable;
+ 	}
++
++	public function get params ():Params {
++		return _params;
++	}
++
++	public function set params (params:Params):void {
++		_params = params;
++	}
+ 	
+ 	/**
+ 	 * @inheritDoc
+@@ -136,7 +146,7 @@
+ 	/**
+ 	 * @inheritDoc
+ 	 */
+-	public function getMessage (messageKey:String, params:Array) : String {
++	public function getMessage (messageKey:String, params:Object = null) : String {
+ 		var msg:String; 
+ 		
+ 		if (_localized) {
+@@ -149,9 +159,7 @@
+ 		}
+ 		if (msg == null) {
+ 			msg = _messages.__base[messageKey];
+-		}
+-		
+-		if (msg != null && params != null && params.length > 0) {
++		} else {
+ 			msg = applyParams(msg, params);
+ 		}
+ 		return msg;
+@@ -162,17 +170,20 @@
+ 		return (bundleKey == "") ? "__base" : bundleKey;
+ 	}
+ 	 
+-	private function applyParams (msg:String, params:Array) : String {
++	private function applyParams (msg:String, params:Object = null) : String {
+ 		var parts:Array = msg.split("{");
+ 		var result:String = parts[0];
+ 		for (var i:Number = 1; i < parts.length; i++) {
+ 			var part:String = parts[i];
+ 			var sub:Array = part.split("}");
+-			var index:uint = uint(sub[0]);
+-			if (isNaN(index) || params[index] == undefined) {
+-				result += "{" + index + "?}";
++			var property:String = String(sub[0]);
++			if (params == null || params[property] == undefined) {
++				if (_params.hasParam(property))
++					result += _params.getParam(property);
++				else
++					result += "{" + property + "?}";
+ 			} else {
+-				result += params[index];
++				result += params[property];
+ 			}
+ 			result += sub[1];
+ 		}
+Index: parsley-flash/org/spicefactory/parsley/flash/resources/impl/DefaultResourceManager.as
+===================================================================
+--- parsley-flash/org/spicefactory/parsley/flash/resources/impl/DefaultResourceManager.as	(revision 1583)
++++ parsley-flash/org/spicefactory/parsley/flash/resources/impl/DefaultResourceManager.as	(working copy)
+@@ -15,6 +15,7 @@
+  */
+  
+ package org.spicefactory.parsley.flash.resources.impl {
++import org.spicefactory.parsley.flash.resources.params.Params;
+ import org.spicefactory.lib.errors.IllegalArgumentError;
+ import org.spicefactory.lib.errors.IllegalStateError;
+ import org.spicefactory.lib.logging.LogContext;
+@@ -55,6 +56,7 @@
+ 	private var _currentLocale:Locale;
+ 	private var _nextLocale:Locale;
+ 	private var _supportedLocales:Object;
++	private var _params:Params;
+ 	
+ 	private var _defaultBundle:ResourceBundleSpi;
+ 	private var _bundles:Object;
+@@ -122,6 +124,17 @@
+ 		}
+ 	}
+ 	
++	public function get params ():Params {
++		return _params;
++	}
++
++	public function set params (params:Params):void {
++		_params = params;
++		for each (var bundle:ResourceBundle in _bundles) {
++			bundle.params = params;
++		}
++	}
++	
+ 	private function onComplete (event : TaskEvent) : void {
+ 		_logger.info("MessageSource loaded completely");
+ 		_currentLocale = _nextLocale;
+@@ -294,6 +307,7 @@
+ 	 */
+ 	public function addBundle (bundle:ResourceBundleSpi) : void {
+ 		bundle.cacheable = _cacheable;
++		bundle.params = _params;
+ 		_bundles[bundle.id] = bundle;
+ 	}
+ 	
+@@ -311,8 +325,7 @@
+ 	/**
+ 	 * @inheritDoc
+ 	 */
+-	public function getMessage (messageKey:String, bundleId:String = null, params:Array = null) : String {
+-		params = (params == null) ? new Array() : params ;
++	public function getMessage (messageKey:String, bundleId:String = null, params:Object = null) : String {
+ 		var bundle:ResourceBundle = getBundle(bundleId);
+ 		return bundle.getMessage(messageKey, params);
+ 	}
+@@ -344,7 +357,6 @@
+ 			bundle.destroy();
+ 		}
+ 	}
+-	
+ }
+ 
+ }
+\ No newline at end of file
+Index: parsley-flash/org/spicefactory/parsley/flash/resources/ResourceManager.as
+===================================================================
+--- parsley-flash/org/spicefactory/parsley/flash/resources/ResourceManager.as	(revision 1583)
++++ parsley-flash/org/spicefactory/parsley/flash/resources/ResourceManager.as	(working copy)
+@@ -16,7 +16,8 @@
+  
+ package org.spicefactory.parsley.flash.resources {
+ 
+-	import org.spicefactory.parsley.flash.resources.Locale;
++import org.spicefactory.parsley.flash.resources.params.Params;
++import org.spicefactory.parsley.flash.resources.Locale;
+ import flash.events.IEventDispatcher;
+ 	
+ /**
+@@ -60,6 +61,10 @@
+ 	
+ 	function set cacheable (cacheable:Boolean) : void;
+ 	
++	function get params () : Params;
++	
++	function set params (params:Params) : void;
++	
+ 	/**
+ 	 * The currently active <code>Locale</code>.
+ 	 */
+@@ -108,7 +113,7 @@
+ 	/**
+ 	 * @copy org.spicefactory.parsley.context.ApplicationContext#getMessage()
+ 	 */
+-	function getMessage (messageKey:String, bundleId:String = null, params:Array = null) : String;
++	function getMessage (messageKey:String, bundleId:String = null, params:Object = null) : String;
+ 		
+ 	
+ }
+Index: parsley-flash/org/spicefactory/parsley/flash/resources/params/ConstantParam.as
+===================================================================
+--- parsley-flash/org/spicefactory/parsley/flash/resources/params/ConstantParam.as	(revision 0)
++++ parsley-flash/org/spicefactory/parsley/flash/resources/params/ConstantParam.as	(revision 0)
+@@ -0,0 +1,15 @@
++package org.spicefactory.parsley.flash.resources.params {
++import org.spicefactory.parsley.flash.resources.params.Param;
++
++public class ConstantParam implements Param {
++	private var _value:String;
++
++	public function ConstantParam (value:String) {
++		_value = value;
++	}
++
++	public function get value ():String {
++		return _value;
++	}
++}
++}
+Index: parsley-flash/org/spicefactory/parsley/flash/resources/params/DefaultParams.as
+===================================================================
+--- parsley-flash/org/spicefactory/parsley/flash/resources/params/DefaultParams.as	(revision 0)
++++ parsley-flash/org/spicefactory/parsley/flash/resources/params/DefaultParams.as	(revision 0)
+@@ -0,0 +1,32 @@
++package org.spicefactory.parsley.flash.resources.params {
++
++import org.spicefactory.lib.reflect.Property;
++
++import flash.utils.Dictionary;
++
++public class DefaultParams implements Params {
++
++	private var _params:Dictionary = new Dictionary();
++
++	public function registerParamLookup (instance:Object, property:Property, key:String):void {
++		_params[key] = new LookupParam(instance, property);
++	}
++
++	public function registerParam (key:String, value:String):void {
++		_params[key] = new ConstantParam(value);
++	}
++
++	public function unregisterParam (key:String):void {
++		_params[key] = null;
++		delete _params[key];
++	}
++
++	public function hasParam (key:String):Boolean {
++		return _params[key] != null;
++	}
++
++	public function getParam (key:String):String {
++		return Param(_params[key]).value;
++	}
++}
++}
+Index: parsley-flash/org/spicefactory/parsley/flash/resources/params/LookupParam.as
+===================================================================
+--- parsley-flash/org/spicefactory/parsley/flash/resources/params/LookupParam.as	(revision 0)
++++ parsley-flash/org/spicefactory/parsley/flash/resources/params/LookupParam.as	(revision 0)
+@@ -0,0 +1,18 @@
++package org.spicefactory.parsley.flash.resources.params {
++import org.spicefactory.lib.reflect.Property;
++import org.spicefactory.parsley.flash.resources.params.Param;
++
++public class LookupParam implements Param {
++	private var _instance:Object;
++	private var _property:Property;
++
++	public function LookupParam (instance:Object, property:Property) {
++		_instance = instance;
++		_property = property;
++	}
++
++	public function get value ():String {
++		return _property.getValue(_instance);
++	}
++}
++}
+Index: parsley-flash/org/spicefactory/parsley/flash/resources/params/Param.as
+===================================================================
+--- parsley-flash/org/spicefactory/parsley/flash/resources/params/Param.as	(revision 0)
++++ parsley-flash/org/spicefactory/parsley/flash/resources/params/Param.as	(revision 0)
+@@ -0,0 +1,5 @@
++package org.spicefactory.parsley.flash.resources.params {
++public interface Param {
++	function get value():String;	
++}
++}
+Index: parsley-flash/org/spicefactory/parsley/flash/resources/params/Params.as
+===================================================================
+--- parsley-flash/org/spicefactory/parsley/flash/resources/params/Params.as	(revision 0)
++++ parsley-flash/org/spicefactory/parsley/flash/resources/params/Params.as	(revision 0)
+@@ -0,0 +1,17 @@
++package org.spicefactory.parsley.flash.resources.params {
++
++import org.spicefactory.lib.reflect.Property;
++
++public interface Params {
++
++	function registerParamLookup (instance:Object, property:Property, key:String):void;
++
++	function registerParam (key:String, value:String):void;
++
++	function unregisterParam (key:String):void;
++
++	function hasParam (key:String):Boolean;
++
++	function getParam (key:String):String;
++}
++}
