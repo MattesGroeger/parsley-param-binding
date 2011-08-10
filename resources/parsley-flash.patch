@@ -232,6 +232,29 @@ Index: parsley-flash/org/spicefactory/parsley/flash/resources/ResourceManager.as
  		
  	
  }
+Index: parsley-flash/org/spicefactory/parsley/flash/resources/params/BindedParam.as
+===================================================================
+--- parsley-flash/org/spicefactory/parsley/flash/resources/params/BindedParam.as	(revision 0)
++++ parsley-flash/org/spicefactory/parsley/flash/resources/params/BindedParam.as	(revision 0)
+@@ -0,0 +1,18 @@
++package org.spicefactory.parsley.flash.resources.params {
++import org.spicefactory.lib.reflect.Property;
++import org.spicefactory.parsley.flash.resources.params.Param;
++
++public class BindedParam implements Param {
++	private var _instance:Object;
++	private var _property:Property;
++
++	public function BindedParam (instance:Object, property:Property) {
++		_instance = instance;
++		_property = property;
++	}
++
++	public function get value ():String {
++		return _property.getValue(_instance);
++	}
++}
++}
 Index: parsley-flash/org/spicefactory/parsley/flash/resources/params/ConstantParam.as
 ===================================================================
 --- parsley-flash/org/spicefactory/parsley/flash/resources/params/ConstantParam.as	(revision 0)
@@ -267,8 +290,8 @@ Index: parsley-flash/org/spicefactory/parsley/flash/resources/params/DefaultPara
 +
 +	private var _params:Dictionary = new Dictionary();
 +
-+	public function registerParamLookup (instance:Object, property:Property, key:String):void {
-+		_params[key] = new LookupParam(instance, property);
++	public function registerParamBinding (instance:Object, property:Property, key:String):void {
++		_params[key] = new BindedParam(instance, property);
 +	}
 +
 +	public function registerParam (key:String, value:String):void {
@@ -286,29 +309,6 @@ Index: parsley-flash/org/spicefactory/parsley/flash/resources/params/DefaultPara
 +
 +	public function getParam (key:String):String {
 +		return Param(_params[key]).value;
-+	}
-+}
-+}
-Index: parsley-flash/org/spicefactory/parsley/flash/resources/params/LookupParam.as
-===================================================================
---- parsley-flash/org/spicefactory/parsley/flash/resources/params/LookupParam.as	(revision 0)
-+++ parsley-flash/org/spicefactory/parsley/flash/resources/params/LookupParam.as	(revision 0)
-@@ -0,0 +1,18 @@
-+package org.spicefactory.parsley.flash.resources.params {
-+import org.spicefactory.lib.reflect.Property;
-+import org.spicefactory.parsley.flash.resources.params.Param;
-+
-+public class LookupParam implements Param {
-+	private var _instance:Object;
-+	private var _property:Property;
-+
-+	public function LookupParam (instance:Object, property:Property) {
-+		_instance = instance;
-+		_property = property;
-+	}
-+
-+	public function get value ():String {
-+		return _property.getValue(_instance);
 +	}
 +}
 +}
@@ -333,7 +333,7 @@ Index: parsley-flash/org/spicefactory/parsley/flash/resources/params/Params.as
 +
 +public interface Params {
 +
-+	function registerParamLookup (instance:Object, property:Property, key:String):void;
++	function registerParamBinding (instance:Object, property:Property, key:String):void;
 +
 +	function registerParam (key:String, value:String):void;
 +

@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<project name="Parsley Resource Params" default="create zip"> 
+<project name="Parsley Param Binding" default="create zip"> 
 
 	<property file="project.properties" />
 	
@@ -10,7 +10,7 @@
 	
 	<target name="compile swc" description="Builds library" depends="properties">
 		<exec executable="${compc}" dir="${basedir}" failonerror="true">
-			<arg line="-keep-as3-metadata+=ResourceParam" />
+			<arg line="-keep-as3-metadata+=ParamBinding" />
 			<arg line="-o '${deploy.dir}/${binary.name}.swc'" />
 			<arg line="-sp '${src.dir}'" />
 			<arg line="-is '${src.dir}'" />

@@ -7,7 +7,7 @@ package de.mattesgroeger.parsley.tag.resources
 	import org.spicefactory.parsley.flash.resources.ResourceManager;
 	import org.spicefactory.parsley.processor.util.ObjectProcessorFactories;
 
-	public class ResourceParamProcessor implements ObjectProcessor
+	public class ParamBindingProcessor implements ObjectProcessor
 	{
 		private var target:ManagedObject;
 		private var property:Property;
@@ -15,7 +15,7 @@ package de.mattesgroeger.parsley.tag.resources
 
 		private var resourceManager:ResourceManager;
 
-		public function ResourceParamProcessor(target:ManagedObject, property:Property, key:String)
+		public function ParamBindingProcessor(target:ManagedObject, property:Property, key:String)
 		{
 			this.target = target;
 			this.property = property;
@@ -26,7 +26,7 @@ package de.mattesgroeger.parsley.tag.resources
 
 		public function preInit():void
 		{
-			resourceManager.params.registerParamLookup(target.instance, property, key);
+			resourceManager.params.registerParamBinding(target.instance, property, key);
 		}
 
 		public function postDestroy():void
@@ -37,7 +37,7 @@ package de.mattesgroeger.parsley.tag.resources
 		public static function newFactory(property:Property, key:String):ObjectProcessorFactory
 		{
 			var params:Array = [property, key];
-			return ObjectProcessorFactories.newFactory(ResourceParamProcessor, params);
+			return ObjectProcessorFactories.newFactory(ParamBindingProcessor, params);
 		}
 	}
 }
