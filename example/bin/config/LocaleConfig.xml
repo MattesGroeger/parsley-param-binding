@@ -1,0 +1,13 @@
+<objects xmlns="http://www.spicefactory.org/parsley" 
+    xmlns:res="http://www.spicefactory.org/parsley/flash/resources"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.spicefactory.org/parsley 
+      http://www.spicefactory.org/parsley/schema/2.0/parsley-core.xsd
+      http://www.spicefactory.org/parsley/flash/resources 
+      http://www.spicefactory.org/parsley/schema/2.0/parsley-resources-flash.xsd">
+    <res:resource-manager>
+        <res:locale language="en"/>
+        <res:locale language="de"/>
+    </res:resource-manager>
+    <res:resource-bundle id="core" basename="locale/core" localized="true"/>
+</objects>
