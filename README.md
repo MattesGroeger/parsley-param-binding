@@ -220,5 +220,4 @@ Change log
 Roadmap
 -------
 
-- Build patched Version against Parsley 2.4.1
 - Anything missing? [Please let me know](https://github.com/MattesGroeger).
