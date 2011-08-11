@@ -3,13 +3,13 @@ Parsley Param Binding
 
 This Parsley extension enhances the native *parsley-flash* library which provides logging and localization for pure AS3 applications. It enhances especially the way you can use variables (params) within your localized texts. For a general introduction into parsley localization [read its documentation](http://www.spicefactory.org/parsley/docs/2.4/manual/resources.php#intro).
 
-This extension allows to use any property within your context to be used as param inside your localized texts. You just have to bind the property to a parameter by using the `[ParamBinding]` metadata tag and it will set the value in all your localized texts automatically.
+This extension can map any properties of classes within your context to params within your localized texts. You just have to bind the property by using the `[ParamBinding]` metadata tag. Whenever you request a localized text that contains the param it will replace it automatically with the binded value.
 
 Because the native localization library supports only indexed params like `{0}`, `{1}`, ... you need a patched version. This version allows human readable params like `{var}`. For more information on the implications the patched version has, please read on at **Patched parsley-flash.swc**.
 
 **Why should I use this extension?**
 
-- Better readable translation text
+- More readable translation text
 - You declare a param binding once instead of setting it for each translation text individually
 - The translations update automatically as soon as the binded property value changes*
 - The binded params can be used in any translation without changes in code
@@ -47,7 +47,7 @@ You can then use the translation without having to set any param. Whenever you s
 		public function init():void
 		{
 			user.name = "Heiner"; // set the username
-			var label:String = resourceManager.getMessage("demo", "hello.user");
+			var label:String = resourceManager.getMessage("hello.user", "demo");
 			trace(label); // output: Hello Heiner!
 		}
 	}
@@ -112,9 +112,14 @@ The `ResourceManager` interface provides a new accessor for the `Params` manager
 	
 	private function init():void
 	{
-		resourceManager.params.registerParam("username", user.name); // changes to user.name won't be reflected in the translations
+		resourceManager.params.registerParam("username", user.name);
 		resourceManager.params.registerParam("br", "\n");
+		
+		// unregister
+		resourceManager.params.unregisterParam("br");
 	}
+
+*Note:* If you change the value of `user.name` after registering it as a `param`, it won't be reflected in the translations. Instead you can use the `registerParamBinding()` method or justs use the `[ParamBinding]` metadata tag.
 
 **What does this mean for my existing code?**
 
@@ -153,7 +158,7 @@ Download the latest version from [the downloads page](https://github.com/MattesG
 
 **Binding via Metadata Tag**
 
-The easiest way to bind a class property to a param is to use the `[ParamBinding]` metadata tag. Be carful, it can only be used on classes that are managed by Parsley. This means the class needs to be registered in a Parsley Context. Therefore it doesn't matter if the class was registered with XML- or ActionScript-Config or if it was added as `DynamicObject`.
+The easiest way to bind a class property to a param is to use the `[ParamBinding]` metadata tag. Be careful, it can only be used on classes that are managed by Parsley. This means the class needs to be registered in a Parsley Context. Therefore it doesn't matter if the class was registered with XML- or ActionScript-Config or if it was added as `DynamicObject`.
 
 	[ParamBinding]
 	public var name:String;
@@ -174,7 +179,7 @@ Optionally you can also declare the "key" for better readability. But the result
 
 In case you want to have some static replacements which don't change over time, you can also use a different approach.
 
-You would use the injected `ResourceManager` to register a static param. In this example we replace all `{br}` params with proper `\n` line-breaks.
+You would use the injected `ResourceManager` to register a static param. In this example we replace all `{br}` params with proper `\n` line-breaks. We do this because the backslash gets escaped by the localization framework.
 
 	[Inject]
 	public var resourceManager:ResourceManager;
