@@ -38,7 +38,8 @@ package de.mattesgroeger.parsley.tag.resources
 		public function decorate(builder:ObjectDefinitionBuilder):void
 		{
 			var p:Property = ReflectionUtil.getProperty(property, builder.typeInfo, true, false);
-			builder.lifecycle().processorFactory(ParamBindingProcessor.newFactory(p, key));
+			var k:String = (key != null && key != "") ? key : p.name;
+			builder.lifecycle().processorFactory(ParamBindingProcessor.newFactory(p, k));
 		}
 	}
 }

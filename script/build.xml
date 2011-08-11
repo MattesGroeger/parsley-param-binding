@@ -38,6 +38,7 @@
 	<target name="create zip" description="create download zip" depends="clean,compile swc,generate asdoc">
 		<mkdir dir="${deploy.dir}/zip/dependencies"/>
 		<mkdir dir="${deploy.dir}/zip/release"/>
+		<mkdir dir="${deploy.dir}/zip/patch"/>
 		<mkdir dir="${deploy.dir}/zip/docs"/>
 		<copy todir="${deploy.dir}/zip/release">
 			<fileset dir="${deploy.dir}">
@@ -46,7 +47,13 @@
 		</copy>
 		<copy todir="${deploy.dir}/zip/dependencies">
 			<fileset dir="${libs.dir}">
-				<include name="as3-signals-v*.swc"/>
+				<include name="parsley-*.swc"/>
+				<include name="spicelib-*.swc"/>
+			</fileset>
+		</copy>
+		<copy todir="${deploy.dir}/zip/patch">
+			<fileset dir="${resources.dir}">
+				<include name="**.patch"/>
 			</fileset>
 		</copy>
 		<copy todir="${deploy.dir}/zip/docs">

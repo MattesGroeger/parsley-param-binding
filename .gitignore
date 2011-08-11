@@ -4,5 +4,6 @@
 bin/*.swc
 bin/*.swf
 bin/*.zip
+docs
 example/bin/*.zip
 example/bin/*.swf
