@@ -133,14 +133,14 @@ This includes:
 
 **Get the patched version**
 
-The download contains a pre-compiled SWC for the latest Parsley 2.4.1 release. If you want to use a different Parsley version, you can apply [the patch](https://github.com/MattesGroeger/parsley-resource-params/resources/parsley-flash.patch) and compile it on your own. You will find a more detailed explanation further down in this document.
+The download contains a pre-compiled SWC for the latest Parsley 2.4.1 release. If you want to use a different Parsley version, you can apply [the patch](https://github.com/MattesGroeger/parsley-param-binding/blob/master/resources/parsley-flash.patch) and compile it on your own. You will find a more detailed explanation further down in this document.
 
 Usage
 -----
 
 **Download**
 
-Download the latest version from [the downloads page](https://github.com/MattesGroeger/parsley-resource-params/downloads). The zip file contains all necessary SWC files.
+Download the latest version from [the downloads page](https://github.com/MattesGroeger/parsley-param-binding/downloads). The zip file contains all necessary SWC files.
 
 **Setup**
 
