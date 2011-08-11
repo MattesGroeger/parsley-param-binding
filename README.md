@@ -17,7 +17,8 @@ Because the native localization library supports only indexed params like `{0}`,
 
 *) You have to re-apply the text to the TextField yourself.
 
-**Quick Intro**
+Quick Intro
+-----------
 
 Lets assume you want to use the param *username* in your translation text:
 
